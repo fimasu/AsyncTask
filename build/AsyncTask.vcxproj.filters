@@ -12,5 +12,13 @@
     <ClCompile Include="..\Sources\main.cpp">
       <Filter>Sources</Filter>
     </ClCompile>
+    <ClCompile Include="..\Sources\stdafx.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\Sources\stdafx.h">
+      <Filter>Sources</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
