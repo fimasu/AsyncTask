@@ -17,6 +17,9 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\Sources\base\base_Task.h">
+      <Filter>base</Filter>
+    </ClInclude>
     <ClInclude Include="..\Sources\stdafx.h">
       <Filter>Sources</Filter>
     </ClInclude>

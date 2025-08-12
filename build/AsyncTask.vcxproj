@@ -15,6 +15,7 @@
     <ClCompile Include="..\Sources\stdafx.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\Sources\base\base_Task.h" />
     <ClInclude Include="..\Sources\stdafx.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

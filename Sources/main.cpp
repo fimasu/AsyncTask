@@ -1,4 +1,13 @@
-﻿int main()
+﻿#include "base/base_Task.h"
+
+base::task f() 
+{ 
+    co_yield 1;
+    co_yield 2;
+}
+
+int main()
 {
-    std::cout << "Hello World!\n";
+    auto g = f();
+    while (g.move_next()) std::cout << g.current_value() << std::endl;
 }
