@@ -1,6 +1,6 @@
 ﻿#include "base/base_Task.h"
 
-base::task f() 
+base::task<int> f() 
 { 
     co_yield 1;
     co_yield 2;

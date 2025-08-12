@@ -1,26 +1,36 @@
-#pragma once
+﻿#pragma once
+
+// --------------------------------------------------------------
+
+namespace base
+{
+template <class ResultT>
+struct promise;
+}
+
+// --------------------------------------------------------------
 
 namespace base
 {
 
 // --------------------------------------------------------------
 
+template <class ResultT = void>
 struct task
 {
 public:
-    struct promise_type;
-    using handle = std::coroutine_handle<promise_type>;
+    using result_type   = ResultT;
+    using promise_type  = promise<result_type>;
+    using handle_type   = std::coroutine_handle<promise_type>;
 
 public:
     task() noexcept;
-private:
-    task(handle h) noexcept;
-public:
+    explicit task(handle_type h) noexcept;
     ~task() noexcept;
 
 public:
-    task(const task&)  noexcept = delete;
-    task& operator=(const task&) noexcept = delete;
+    task(const task&)  noexcept             = delete;
+    task& operator=(const task&) noexcept   = delete;
     task(task&& rhs) noexcept;
     task& operator=(task&& rhs) noexcept;
 
@@ -30,46 +40,58 @@ public:
     int current_value();
 
 private:
-    handle m_Handle;
+    handle_type m_Handle;
 };
 
 // --------------------------------------------------------------
 
-struct task::promise_type
+template <class ResultT>
+struct promise
 {
-    int current_value;
-    static auto get_return_object_on_allocation_failure() { return task{ nullptr }; }
-    auto get_return_object() { return task{ handle::from_promise(*this) }; }
+    using task_type     = task<ResultT>;
+    using handle_type   = task_type::handle_type;
+
+    static auto get_return_object_on_allocation_failure() { return task_type{ nullptr }; }
+    auto get_return_object() { return task_type{ handle_type::from_promise(*this) }; }
+    
     auto initial_suspend() { return std::suspend_always{}; }
     auto final_suspend() noexcept { return std::suspend_always{}; }
+    
     void unhandled_exception() { std::terminate(); }
+    
     void return_void() {}
     auto yield_value(int value)
     {
         current_value = value;
         return std::suspend_always{};
     }
+
+    int current_value;
 };
 
 // --------------------------------------------------------------
 
-task::task() noexcept
+template <class ResultT>
+task<ResultT>::task() noexcept
     : m_Handle(nullptr)
 {
 }
 
-task::task(handle h) noexcept
+template <class ResultT>
+task<ResultT>::task(handle_type h) noexcept
     : m_Handle(h)
 {
 }
 
-task::task(task&& rhs) noexcept
+template <class ResultT>
+task<ResultT>::task(task&& rhs) noexcept
     : m_Handle(rhs.m_Handle)
 {
     rhs.m_Handle = nullptr;
 }
 
-task& task::operator=(task&& rhs) noexcept
+template <class ResultT>
+task<ResultT>& task<ResultT>::operator=(task<ResultT>&& rhs) noexcept
 {
     if (this != &rhs)
     {
@@ -80,12 +102,14 @@ task& task::operator=(task&& rhs) noexcept
     return *this;
 }
 
-task::~task() noexcept 
+template <class ResultT>
+task<ResultT>::~task<ResultT>() noexcept
 {
     if (m_Handle) m_Handle.destroy();
 }
 
-bool task::move_next() 
+template <class ResultT>
+bool task<ResultT>::move_next()
 { 
     if (m_Handle)
     {
@@ -96,7 +120,8 @@ bool task::move_next()
     return false;
 }
 
-int task::current_value() 
+template <class ResultT>
+int task<ResultT>::current_value()
 {
     return m_Handle.promise().current_value;
 }
