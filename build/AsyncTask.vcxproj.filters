@@ -29,5 +29,8 @@
     <ClInclude Include="..\Sources\base\base_TaskAwaiter.h">
       <Filter>base</Filter>
     </ClInclude>
+    <ClInclude Include="..\Sources\base\base_Promise.h">
+      <Filter>base</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

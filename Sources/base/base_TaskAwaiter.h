@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include "base/base_IAwaiter.h"
 #include "base/base_Task.h"
+#include "base/base_Promise.h"
 
 // --------------------------------------------------------------
 
@@ -15,10 +16,10 @@ class task_awaiter : public ::base::IAwaiter
 {
 public:
     using result_type   = ResultT;
-    using task_tape     = task<ResultT>;
+    using task_type     = task<ResultT>;
 
 public:
-    explicit task_awaiter(task_tape&& task) noexcept
+    explicit task_awaiter(task_type&& task) noexcept
         : m_Task(std::move(task))
     {
     }
@@ -35,23 +36,43 @@ public:
     task_awaiter& operator=(task_awaiter&&) noexcept      = delete;
 
 public:
+    bool await_ready() { return m_Task.done(); }
+
+    template <typename TResultOther>
+    bool await_suspend(std::coroutine_handle<promise<TResultOther>> hOuterCoroutine)
+    {
+        resume();
+        if (m_Task.done())
+        {
+            // フレーム待ちなしで終了した場合は登録不要
+            return false;
+        }
+        // このハンドルはco_awaitがある親コルーチン側のもの。
+        // thisはco_awaitで変換された子コルーチン側のAwaiterである
+        // ここでハンドルをセットすることで、親コルーチンが再開されたときに
+        // 子コルーチンのawait_resume()が呼ばれるようになる
+        hOuterCoroutine.promise().bind_sub_awaiter(this);
+        return true;
+    }
+
+    ResultT await_resume()
+    {
+        return m_Task.consume_result();
+    }
+
+public:
     void resume() override
     {
-        if (m_Task.move_next())
-        {
-            // If the task has more work to do, we can resume it.
-            return;
-        }
-        // If the task is done, we can handle the result or cleanup.
+        m_Task.move_next();
     }
 
     bool done() const override
     {
-        return !m_Task.move_next();
+        return !m_Task.done();
     }
 
 private:
-    task_tape m_Task;
+    task_type m_Task;
 };
 
 // --------------------------------------------------------------

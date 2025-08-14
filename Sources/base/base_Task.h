@@ -5,7 +5,7 @@
 namespace base
 {
 template <class ResultT>
-struct promise;
+class promise;
 }
 
 // --------------------------------------------------------------
@@ -34,39 +34,13 @@ public:
     task(task&& rhs) noexcept;
     task& operator=(task&& rhs) noexcept;
 
-
 public:
+    bool done() const { return !m_Handle || m_Handle.done(); }
     bool move_next();
-    int current_value();
+    result_type consume_result();
 
 private:
     handle_type m_Handle;
-};
-
-// --------------------------------------------------------------
-
-template <class ResultT>
-struct promise
-{
-    using task_type     = task<ResultT>;
-    using handle_type   = task_type::handle_type;
-
-    static auto get_return_object_on_allocation_failure() { return task_type{ nullptr }; }
-    auto get_return_object() { return task_type{ handle_type::from_promise(*this) }; }
-    
-    auto initial_suspend() { return std::suspend_always{}; }
-    auto final_suspend() noexcept { return std::suspend_always{}; }
-    
-    void unhandled_exception() { std::terminate(); }
-    
-    void return_void() {}
-    auto yield_value(int value)
-    {
-        current_value = value;
-        return std::suspend_always{};
-    }
-
-    int current_value;
 };
 
 // --------------------------------------------------------------
@@ -121,9 +95,9 @@ bool task<ResultT>::move_next()
 }
 
 template <class ResultT>
-int task<ResultT>::current_value()
+task<ResultT>::result_type task<ResultT>::consume_result()
 {
-    return m_Handle.promise().current_value;
+    return m_Handle.promise().consume_result();
 }
 
 // --------------------------------------------------------------
