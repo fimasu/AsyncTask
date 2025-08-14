@@ -1,6 +1,5 @@
 ﻿#pragma once
 #include "base/base_IAwaiter.h"
-#include "base/base_Task.h"
 
 // --------------------------------------------------------------
 
@@ -81,13 +80,13 @@ promise_base::promise_base(promise_base&& source) noexcept
 
 // --------------------------------------------------------------
 
-template <class ResultT>
+template <class ReturnObjectT>
 class promise final : public promise_base
 {
 public:
-	using result_type = ResultT;
-	using task_type   = task<result_type>;
-	using handle_type = task_type::handle_type;
+	using return_object_type   = ReturnObjectT;
+	using result_type          = return_object_type::result_type;
+	using handle_type          = return_object_type::handle_type;
 
 public:
 	promise() noexcept  = default;
@@ -100,8 +99,15 @@ public:
 	promise& operator=(promise&&) noexcept      = delete; // TODO : ムーブ代入は許可する？
 
 public:
-	static auto get_return_object_on_allocation_failure() { return task_type{ nullptr }; }
-	auto get_return_object() { return task_type{ handle_type::from_promise(*this) }; }
+	static auto get_return_object_on_allocation_failure() 
+	{ 
+		return return_object_type{ nullptr }; 
+	}
+	
+	auto get_return_object() 
+	{ 
+		return return_object_type{ handle_type::from_promise(*this) };
+	}
 
 	// --------------------
 	// co_return サポート
@@ -147,13 +153,14 @@ private:
 
 // --------------------------------------------------------------
 
-template <>
-class promise<void> final : public promise_base
+template <class ReturnObjectT>
+requires std::is_void_v<typename ReturnObjectT::result_type>
+class promise<ReturnObjectT> final : public promise_base
 {
 public:
-	using result_type	= void;
-	using task_type		= task<result_type>;
-	using handle_type	= task_type::handle_type;
+	using return_object_type   = ReturnObjectT;
+	using result_type          = return_object_type::result_type;
+	using handle_type          = return_object_type::handle_type;
 
 public:
 	promise() noexcept  = default;
@@ -166,8 +173,15 @@ public:
 	promise& operator=(promise&&) noexcept      = delete; // TODO : ムーブ代入は許可する？
 
 public:
-	static auto get_return_object_on_allocation_failure() { return task_type{ nullptr }; }
-	auto get_return_object() { return task_type{ handle_type::from_promise(*this) }; }
+	static auto get_return_object_on_allocation_failure()
+	{
+		return return_object_type{ nullptr };
+	}
+
+	auto get_return_object()
+	{
+		return return_object_type{ handle_type::from_promise(*this) };
+	}
 
 	// --------------------
 	// co_return サポート

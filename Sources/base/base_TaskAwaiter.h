@@ -1,7 +1,6 @@
 ﻿#pragma once
 #include "base/base_IAwaiter.h"
 #include "base/base_Task.h"
-#include "base/base_Promise.h"
 
 // --------------------------------------------------------------
 
@@ -38,8 +37,8 @@ public:
 public:
     bool await_ready() { return m_Task.done(); }
 
-    template <typename TResultOther>
-    bool await_suspend(std::coroutine_handle<promise<TResultOther>> hOuterCoroutine)
+    template <class ReturnObjectT>
+    bool await_suspend(std::coroutine_handle<promise<ReturnObjectT>> hOuterCoroutine)
     {
         resume();
         if (m_Task.done())

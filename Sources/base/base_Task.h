@@ -1,12 +1,5 @@
 ﻿#pragma once
-
-// --------------------------------------------------------------
-
-namespace base
-{
-template <class ResultT>
-class promise;
-}
+#include "base/base_Promise.h"
 
 // --------------------------------------------------------------
 
@@ -20,7 +13,7 @@ struct task
 {
 public:
     using result_type   = ResultT;
-    using promise_type  = promise<result_type>;
+    using promise_type  = promise<task>;
     using handle_type   = std::coroutine_handle<promise_type>;
 
 public:
