@@ -38,7 +38,7 @@ public:
     bool await_ready() { return m_Task.done(); }
 
     template <class ReturnObjectT>
-    bool await_suspend(std::coroutine_handle<promise<ReturnObjectT>> hOuterCoroutine)
+    bool await_suspend(std::coroutine_handle<detail::promise<ReturnObjectT>> hOuterCoroutine)
     {
         resume();
         if (m_Task.done())

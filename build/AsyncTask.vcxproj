@@ -16,9 +16,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Sources\base\base_IAwaiter.h" />
-    <ClInclude Include="..\Sources\base\base_Promise.h" />
     <ClInclude Include="..\Sources\base\base_Task.h" />
     <ClInclude Include="..\Sources\base\base_TaskAwaiter.h" />
+    <ClInclude Include="..\Sources\base\detail\base_detail_Promise.h" />
     <ClInclude Include="..\Sources\stdafx.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

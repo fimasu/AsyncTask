@@ -7,6 +7,9 @@
     <Filter Include="base">
       <UniqueIdentifier>{925a2128-c002-46cf-8624-ad10da862e0a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="base\detail">
+      <UniqueIdentifier>{9bdbad9e-00a0-409a-a03d-74e3ce61545a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Sources\main.cpp">
@@ -29,8 +32,8 @@
     <ClInclude Include="..\Sources\base\base_TaskAwaiter.h">
       <Filter>base</Filter>
     </ClInclude>
-    <ClInclude Include="..\Sources\base\base_Promise.h">
-      <Filter>base</Filter>
+    <ClInclude Include="..\Sources\base\detail\base_detail_Promise.h">
+      <Filter>base\detail</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include "base/base_Promise.h"
+#include "base/detail/base_detail_Promise.h"
 
 // --------------------------------------------------------------
 
@@ -13,7 +13,7 @@ struct task
 {
 public:
     using result_type   = ResultT;
-    using promise_type  = promise<task>;
+    using promise_type  = detail::promise<task>;
     using handle_type   = std::coroutine_handle<promise_type>;
 
 public:
