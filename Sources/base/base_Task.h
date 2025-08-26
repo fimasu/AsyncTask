@@ -12,7 +12,8 @@ template <class ResultT = void>
 struct task
 {
 public:
-    using result_type   = ResultT;
+    using result_value  = ResultT;
+    using result_type   = std::conditional_t<std::is_void_v<ResultT>, void, std::optional<ResultT>>;
     using promise_type  = detail::promise<task>;
     using handle_type   = std::coroutine_handle<promise_type>;
 
@@ -87,7 +88,7 @@ bool task<ResultT>::move_next()
     if (m_Handle)
     {
         m_Handle.resume();
-        return !m_Handle.done();
+        return !m_Handle.done(); // TODO: キャンセル時は終了扱いにすべき
 
     }
     return false;
@@ -106,8 +107,8 @@ template <class ResultT>
 class task<ResultT>::awaiter final
 {
 public:
-    using result_type = ResultT;
     using task_type   = task<ResultT>;
+    using result_type = task_type::result_type;
 
 public:
     explicit awaiter(task_type&& task) noexcept
@@ -137,7 +138,7 @@ public:
         return hInnerCoroutine;
     }
 
-    ResultT await_resume()
+    result_type await_resume()
     {
         return m_Task.consume_result();
     }
