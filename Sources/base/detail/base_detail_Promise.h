@@ -1,5 +1,4 @@
 ﻿#pragma once
-#include "base/base_IAwaiter.h"
 
 // --------------------------------------------------------------
 
@@ -18,9 +17,11 @@ enum class PromiseStatus
 
 // --------------------------------------------------------------
 
-
 class promise_base
 {
+private:
+    class continuation_resumer;
+
 protected:
 	promise_base() noexcept;
 	/* non-virtual */ ~promise_base() noexcept;
@@ -34,8 +35,8 @@ public:
 	// --------------------
 	// suspend
 public:
-	auto initial_suspend() { return std::suspend_always{}; }
-	auto final_suspend() noexcept { return std::suspend_always{}; }
+    inline auto initial_suspend() noexcept;
+    inline auto final_suspend() noexcept;
 
     // --------------------
     // 例外のハンドリング
@@ -47,29 +48,11 @@ public:
     }
 
 	// --------------------
-	// 子のawaiterの管理
+	// 継続(戻り先)の制御
 public:
-	bool resume_sub_awaiter()
+	void set_continuation(std::coroutine_handle<> continuation) noexcept
 	{
-		if (!m_SubAwaiter)
-		{
-			return false;
-		}
-
-		m_SubAwaiter->resume();
-
-		if (m_SubAwaiter->done())
-		{
-			m_SubAwaiter = nullptr;
-			return false;
-		}
-
-		return true;
-	}
-
-	void bind_sub_awaiter(IAwaiter* awaiter) noexcept
-	{
-		m_SubAwaiter = awaiter;
+		m_Continuation = continuation;
 	}
 
     // --------------------
@@ -93,13 +76,33 @@ public:
     bool is_faulted() const noexcept { return m_Status == PromiseStatus::Faulted; }
 
 private:
-    IAwaiter*       m_SubAwaiter    = nullptr;
-    PromiseStatus   m_Status        = PromiseStatus::Executing;
+	std::coroutine_handle<> m_Continuation  = std::noop_coroutine();
+    PromiseStatus           m_Status        = PromiseStatus::Executing;
+};
+
+// --------------------------------------------------------------
+
+class promise_base::continuation_resumer final
+{
+public:
+    constexpr bool await_ready() const noexcept 
+    {
+        return false; 
+    }
+
+    template <class PromiseT>
+    inline auto await_suspend(std::coroutine_handle<PromiseT> h) noexcept
+    {
+        promise_base& promise = h.promise();
+        return promise.m_Continuation;
+    }
+
+    void await_resume() const noexcept {}
 };
 
 // --------------------------------------------------------------
 promise_base::promise_base() noexcept
-	: m_SubAwaiter(nullptr)
+    : m_Continuation{ std::noop_coroutine() }
 {
 }
 
@@ -108,7 +111,21 @@ promise_base::~promise_base() noexcept
 }
 
 promise_base::promise_base(promise_base&& source) noexcept
+	: m_Continuation{ std::exchange(source.m_Continuation, std::noop_coroutine()) }
 {
+}
+
+// --------------------
+// suspend
+
+auto promise_base::initial_suspend() noexcept
+{
+    return std::suspend_always{};
+}
+
+auto promise_base::final_suspend() noexcept
+{
+    return continuation_resumer{};
 }
 
 // --------------------------------------------------------------

@@ -16,6 +16,9 @@ public:
     using promise_type  = detail::promise<task>;
     using handle_type   = std::coroutine_handle<promise_type>;
 
+private:
+    class awaiter;
+
 public:
     task() noexcept;
     explicit task(handle_type h) noexcept;
@@ -26,6 +29,9 @@ public:
     task& operator=(const task&) noexcept   = delete;
     task(task&& rhs) noexcept;
     task& operator=(task&& rhs) noexcept;
+
+public:
+    auto operator co_await()&&;
 
 public:
     bool done() const { return !m_Handle || m_Handle.done(); }
@@ -93,6 +99,62 @@ task<ResultT>::result_type task<ResultT>::consume_result()
     return m_Handle.promise().consume_result();
 }
 
+// --------------------------------------------------------------
+
+// taskをawaitableにするためのawaiter
+template <class ResultT>
+class task<ResultT>::awaiter final
+{
+public:
+    using result_type = ResultT;
+    using task_type   = task<ResultT>;
+
+public:
+    explicit awaiter(task_type&& task) noexcept
+        : m_Task(std::move(task))
+    {
+    }
+    ~awaiter() noexcept
+    {
+    }
+
+    awaiter(const awaiter&)  noexcept           = delete;
+    awaiter& operator=(const awaiter&) noexcept = delete;
+    awaiter(awaiter&& rhs) noexcept
+        : m_Task(std::move(rhs.m_Task))
+    {
+    }
+    awaiter& operator=(awaiter&&) noexcept = delete;
+
+public:
+    bool await_ready() { return m_Task.done(); }
+
+    template <class ReturnObjectT>
+    auto await_suspend(std::coroutine_handle<detail::promise<ReturnObjectT>> hOuterCoroutine)
+    {
+        const auto hInnerCoroutine = m_Task.m_Handle;
+        hInnerCoroutine.promise().set_continuation(hOuterCoroutine);
+        return hInnerCoroutine;
+    }
+
+    ResultT await_resume()
+    {
+        return m_Task.consume_result();
+    }
+
+private:
+    task_type m_Task;
+};
+
+// --------------------------------------------------------------
+
+// taskをawaitableにするためのoperator co_await
+
+template <class ResultT>
+auto task<ResultT>::operator co_await()&&
+{
+    return awaiter{ std::move(*this) };
+}
 // --------------------------------------------------------------
 
 } // namespace base
