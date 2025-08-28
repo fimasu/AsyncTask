@@ -195,6 +195,9 @@ public:
 	auto yield_value(cancellation_t)
 	{
 		mark_canceled();
+		// TODO:
+		// ここで継続先を変更すれば戻り先を変えられるので、
+		// キャンセル時に戻り先をたどることで疑似的に大域脱出が可能では？
 		return continuation_resumer{};
 	}
 
@@ -270,6 +273,9 @@ public:
 	auto yield_value(cancellation_t)
 	{
 		mark_canceled();
+        // TODO:
+		// ここで継続先を変更すれば戻り先を変えられるので、
+        // キャンセル時に戻り先をたどることで疑似的に大域脱出が可能では？
 		return continuation_resumer{};
 	}
 
