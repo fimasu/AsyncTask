@@ -35,7 +35,7 @@ public:
     auto operator co_await()&&;
 
 public:
-    bool done() const { return !m_Handle || m_Handle.done(); }
+    bool has_next() const;
     bool move_next();
     result_type consume_result();
 
@@ -59,9 +59,8 @@ task<ResultT>::task(handle_type h) noexcept
 
 template <class ResultT>
 task<ResultT>::task(task&& rhs) noexcept
-    : m_Handle(rhs.m_Handle)
+    : m_Handle(std::exchange(rhs.m_Handle, {}))
 {
-    rhs.m_Handle = nullptr;
 }
 
 template <class ResultT>
@@ -69,9 +68,12 @@ task<ResultT>& task<ResultT>::operator=(task<ResultT>&& rhs) noexcept
 {
     if (this != &rhs)
     {
-        if (m_Handle) m_Handle.destroy();
-        m_Handle = rhs.m_Handle;
-        rhs.m_Handle = nullptr;
+        if (m_Handle)
+        {
+            m_Handle.destroy();
+        }
+
+        m_Handle = std::exchange(rhs.m_Handle, {});
     }
     return *this;
 }
@@ -79,16 +81,25 @@ task<ResultT>& task<ResultT>::operator=(task<ResultT>&& rhs) noexcept
 template <class ResultT>
 task<ResultT>::~task<ResultT>() noexcept
 {
-    if (m_Handle) m_Handle.destroy();
+    if (m_Handle)
+    {
+        m_Handle.destroy();
+    }
+}
+
+template <class ResultT>
+bool task<ResultT>::has_next() const 
+{
+    return m_Handle && !m_Handle.done();
 }
 
 template <class ResultT>
 bool task<ResultT>::move_next()
 { 
-    if (m_Handle)
+    if (has_next())
     {
         m_Handle.resume();
-        return !m_Handle.done(); // TODO: キャンセル時は終了扱いにすべき
+        return has_next(); // TODO: キャンセル時は終了扱いにすべき
 
     }
     return false;
@@ -128,7 +139,7 @@ public:
     awaiter& operator=(awaiter&&) noexcept = delete;
 
 public:
-    bool await_ready() { return m_Task.done(); }
+    bool await_ready() { return !m_Task.has_next(); }
 
     template <class ReturnObjectT>
     auto await_suspend(std::coroutine_handle<detail::promise<ReturnObjectT>> hOuterCoroutine)
